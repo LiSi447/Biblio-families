@@ -2,10 +2,7 @@
 
 ## call package
 
-library(readr)
-library(dplyr)
-library(stringr)
-library(tidyr)
+library(tidyverse)
 
 # import data
 VABBdata_FULL <- read_csv2("./Raw data/VABB/190521_overzichtsrapport.csv", 
