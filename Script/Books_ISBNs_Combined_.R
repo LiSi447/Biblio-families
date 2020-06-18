@@ -4,23 +4,20 @@
 
 library(tidyverse)
 
-
 # Import data -------------------------------------------------------------
 
 #Note: file names that were used to generate the list of ISBNS sent to OCLC: "COBISS_ISBNs_20190712.csv"",
 #"CROSBI_ISBNs_20190704.csv", "VABB_ISBNs_20190710.csv", "VABB-notPR_ISBNs_20190712.csv", "CRISTIN_ISBNs_20190712.csv"
 
-COBISS <- read_csv("./Output/COBISS-ISBNs_2020-05-28.csv", col_types = cols(.default = "c"))
+COBISS <- read_csv("./Output/COBISS-ISBNs_2020-06-17.csv", col_types = cols(.default = "c"))
 
-CROSBI <- read_csv("./Output/CROSBI-ISBNs_2020-05-27.csv", col_types = cols(.default = "c"))
+CROSBI <- read_csv("./Output/CROSBI-ISBNs_2020-06-09.csv", col_types = cols(.default = "c"))
 
-VABB <- read_csv("./Output/VABB-PR-ISBNs_2020-05-27.csv", col_types = cols(.default = "c"))
+VABB <- read_csv("./Output/VABB-PR-ISBNs_2020-06-08.csv", col_types = cols(.default = "c"))
 
-VABB_npr <- read_csv("./Output/VABB-NPR-ISBNs_2020-05-27.csv", col_types = cols(.default = "c"))
+VABB_npr <- read_csv("./Output/VABB-NPR-ISBNs_2020-06-04.csv", col_types = cols(.default = "c"))
 
-CRISTIN <- read_csv("./Output/CRISTIN-ISBNs_2020-05-27.csv", col_types = cols(.default = "c")) 
-
-
+CRISTIN <- read_csv("./Output/CRISTIN-ISBNs_2020-06-04.csv", col_types = cols(.default = "c")) 
 
 # Combine and clean-up lists -----------------------------------------------------------
 
@@ -36,8 +33,6 @@ ISBNs <- ISBNs %>%
     ISBN10 = ifelse(str_detect(ISBNs$ISBN, "^[:alnum:]{10}$"), "YES", "NO")
   ) %>% 
   distinct(ISBN, .keep_all = TRUE)
-#
-
 
 # Transform ISBN10 to ISBN13 ----------------------------------------------
 
@@ -89,6 +84,10 @@ ISBNs_distinct <- ISBNs %>%
   distinct(ISBN13_fin) %>% 
   select(ISBN13_fin)
 
+
+# Remove inaccurate ISBNs -------------------------------------------------
+
+ISBNs_distinct <- ISBNs_distinct %>% filter(!ISBN13_fin %in% c("9780000000001","9780000000002"))
 
 # Export the list of ISBNs ------------------------------------------------
 

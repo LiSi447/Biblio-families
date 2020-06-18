@@ -94,13 +94,22 @@ listISBNs <- books3 %>%
 ID_ISBN <- books3 %>% 
   select(`COBISS.SI-ID`, ISBN.vars) %>% 
   gather("N-ISBN", "ISBN", all_of(ISBN.vars)) %>% 
-  select(-`N-ISBN`)
+  select(ISBN, `COBISS.SI-ID`) %>% 
+  filter(!is.na(ISBN))
+
+names(ID_ISBN) <- c("ISBN", "localID")
+ID_ISBN$Source <- "COBISS"
 
 # prepare the dataset for analysis (v.2)
 
 books_metadata <- books3 %>% 
-  select(`COBISS.SI-ID`, Year, Title, Publisher, Country, language, `Last name, First name / researcher's code`)
+  select(`COBISS.SI-ID`, Year, Title, Publisher, language, `Last name, First name / researcher's code`)
 
+books_metadata$Source <- "COBISS"
+
+names(books_metadata) <- c("localID", "Year", "Title", "Publisher", "Language",  "Author", "Source")
+
+books_metadata <- books_metadata %>% select(localID, Title, Author, Year, Publisher, Language, Source)
 # export datasets
 
 currentDate <- Sys.Date()
