@@ -3,8 +3,6 @@
 ## call package
 
 library(tidyverse)
-#library(rvest)
-#library(RCurl)
 
 # import data
 CROSBIdata_FULL <- read_csv2("./Raw data/CROSBI/CROSBI_books.csv",
@@ -93,7 +91,7 @@ books4 <- books3 %>%
 #extract ISBNs
 
 listISBNs <- as.tibble(books4$ISBN_cleaned)
-names(list_ISBNs) <- "ISBN"
+names(listISBNs)[1] <- "ISBN"
 listISBNs <- distinct(list_ISBNs)
 
 #prepare the dataset for analysis (v.1) IDs and ISBNs
@@ -103,16 +101,21 @@ ID_ISBN <- books4 %>%
   mutate(
     ISBN13 = cleaned_ISBNs$ISBN13_fin[match(ISBN_cleaned, cleaned_ISBNs$ISBN)]
   ) %>% 
-  select(crosbiID, crosbiID.local, ISBN13) %>% 
+  select(ISBN13, crosbiID.local) %>% 
   distinct(crosbiID.local, ISBN13, .keep_all = TRUE)
 
-names(ID_ISBN)[2] <- "ISBN"
+names(ID_ISBN) <- c("ISBN", "localID")
+
+ID_ISBN$Source <- "CROSBI"
 
 #prepare the dataset for analysis (v.2) descriptive metadata
 
 books_metadata <- books4 %>% 
-  select(crosbiID, crosbiID.local, AUTHORS, `TITLE (ORIGINAL)`, `TITLE (IN ENGLISH)`, YEAR,
-                                        PUBLISHER, language)
+  select(crosbiID.local, AUTHORS, `TITLE (ORIGINAL)`, YEAR, PUBLISHER, language)
+
+books_metadata$Source <- "CROSBI"
+
+names(books_metadata) <- c("localID", "Author", "Title", "Year", "Publisher", "Language", "Source")
 #export datasets
 
 currentDate <- Sys.Date()
