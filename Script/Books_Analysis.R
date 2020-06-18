@@ -140,6 +140,7 @@ n.ISBNs.bySource <- data_workID %>%
   summarise(
     mean = mean(n.ISBNs.perWork),
     median = median(n.ISBNs.perWork),
+    sd = sd(n.ISBNs.perWork),
     min = min(n.ISBNs.perWork),
     max = max(n.ISBNs.perWork),
     q75 = as.numeric(quantile(n.ISBNs.perWork, probs = seq(0.75, 0.75, by = 0.01))),
@@ -153,6 +154,7 @@ n.ISBNs.bySource[6,] <- data_workID %>%
     Source = "Total",
     mean = mean(n.ISBNs.perWork),
     median = median(n.ISBNs.perWork),
+    sd = sd(n.ISBNs.perWork),
     min = min(n.ISBNs.perWork),
     max = max(n.ISBNs.perWork),
     q75 = as.numeric(quantile(n.ISBNs.perWork, probs = seq(0.75, 0.75, by = 0.01))),
@@ -213,6 +215,7 @@ n.ISBNs.byGroup <- data_workID %>%
   summarise(
     mean = mean(n.ISBNs.perWork),
     median = median(n.ISBNs.perWork),
+    sd = sd(n.ISBNs.perWork),
     min = min(n.ISBNs.perWork),
     max = max(n.ISBNs.perWork),
     q75 = as.numeric(quantile(n.ISBNs.perWork, probs = seq(0.75, 0.75, by = 0.01))),
@@ -226,6 +229,7 @@ n.ISBNs.byGroup[6,] <- data_workID %>%
     Source = "Total",
     mean = mean(n.ISBNs.perWork),
     median = median(n.ISBNs.perWork),
+    sd = sd(n.ISBNs.perWork),
     min = min(n.ISBNs.perWork),
     max = max(n.ISBNs.perWork),
     q75 = as.numeric(quantile(n.ISBNs.perWork, probs = seq(0.75, 0.75, by = 0.01))),
@@ -274,8 +278,9 @@ Publishers_GV.SE <- Publisher.byGroup %>%
 
 Publishers_GV.ME <- Publisher.byGroup %>% 
   arrange(desc(`GV-ME`)) %>% 
-  head(10) %>% 
-  select(Publisher_cleaned, `GV-ME`)
+  #head(10) %>% 
+  select(Publisher_cleaned, `GV-ME`) %>% 
+  filter(!is.na(`GV-ME`))
 
 Publishers_N.F <- Publisher.byGroup %>% 
   arrange(desc(`N-Find`)) %>% 
