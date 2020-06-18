@@ -152,9 +152,14 @@ listISBNs <- books5 %>%
 ID_ISBN <- books5 %>% 
   select(Loi, ISBN.vars) %>% 
   gather("N-ISBN", "ISBN.raw", ISBN.vars, na.rm = TRUE)
+
 ID_ISBN$ISBN13 <- cleaned_ISBNs$ISBN13_fin[match(ID_ISBN$ISBN.raw, cleaned_ISBNs$ISBN)] #assigned ISBN13 acquired by transforming ISBN10
-ID_ISBN <- ID_ISBN %>% select(Loi, ISBN13)
-names(ID_ISBN)[2] <- "ISBN"
+
+ID_ISBN <- ID_ISBN %>% select(ISBN13, Loi)
+
+names(ID_ISBN) <- c("ISBN", "localID")
+
+ID_ISBN$Source <- "VABB_PR"
 
 #prepare the dataset for analysis (v.2)
 
@@ -165,6 +170,12 @@ books_authors <- books5 %>%
 books_metadata <- books5 %>% 
   select(Loi, pubyear, utitle, lg)
 books_metadata <- left_join(books_metadata, books_authors, by = "Loi")
+
+books_metadata <- books_metadata %>% mutate(Source = "VABB_PR")
+
+names(books_metadata) <- c("localID", "Year", "Publisher", "Language", "Title", "Author", "Source")
+
+books_metadata <- books_metadata %>% select(localID, Title, Author, Year, Publisher, Language, Source)
 
 #export datasets
 
