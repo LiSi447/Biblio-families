@@ -3,6 +3,8 @@
 # Load packages -----------------------------------------------------------
 
 library(tidyverse)
+library(gridExtra)
+library(extrafont)
 
 # Import data -------------------------------------------------------------
 
@@ -36,7 +38,7 @@ workIDs.in.national.DB <- data_workID %>%
 
 total.in.national.DB <- cbind(records.in.national.DB, ISBNs.in.national.DB, workIDs.in.national.DB)
 
-total.in.national.DB <- total.in.national.DB %>% select(-Source1, -Source2)
+total.in.national.DB <- total.in.national.DB %>% select(-`Source...3`, -`Source...5`)
 
 a <- count(data_localID %>% distinct(localID, .keep_all = TRUE)) 
 b <- count(data_ISBN %>% distinct(ISBN, .keep_all = TRUE) %>% filter(ISBN.national == TRUE))
@@ -68,7 +70,7 @@ workIDs.in.WC<- data_workID %>%
 
 total.in.WC<- cbind(records.in.WC, ISBNs.in.WC, workIDs.in.WC)
 
-total.in.WC <- total.in.WC %>% select(-Source1, -Source2)
+total.in.WC <- total.in.WC %>% select(-`Source...3`, -`Source...5`)
 
 a.WC <- count(data_localID %>% distinct(localID, .keep_all = TRUE) %>% filter(in.WC == TRUE))
 b.WC <- count(data_ISBN %>% distinct(ISBN, .keep_all = TRUE) %>% filter(in.WC == TRUE & ISBN.national == TRUE))
@@ -122,7 +124,7 @@ workIDs.in.GR <- data_workID %>%
 
 total.in.GR<- cbind(records.in.GR, ISBNs.in.GR, workIDs.in.GR)
 
-total.in.GR <- total.in.GR %>% select(-Source1, -Source2)
+total.in.GR <- total.in.GR %>% select(-`Source...3`, -`Source...5`)
 
 a.GR <- count(data_localID %>% distinct(localID, .keep_all = TRUE) %>% filter(in.GR == TRUE))
 b.GR <- count(data_ISBN %>% distinct(ISBN, .keep_all = TRUE) %>% filter(in.GR == TRUE))
@@ -176,7 +178,7 @@ data_workID <- data_workID %>%
       n.ISBNs.perWork >= 6 & book_category == "Misc" ~ "Misc",
       in.WC == TRUE & n.ISBNs.perWork < 6 ~ "GV-SE"
     ),
-    analysis.group = ifelse(is.na(analysis.group), "N-Find", analysis.group)
+    analysis.group = ifelse(is.na(analysis.group), "GI", analysis.group)
   )
 
 data_localID <- data_localID %>% 
@@ -187,7 +189,7 @@ data_localID <- data_localID %>%
       n.ISBNs.perWork >= 6 & book_category == "Misc" ~ "Misc",
       in.WC == TRUE & n.ISBNs.perWork < 6 ~ "GV-SE"
     ),
-    analysis.group = ifelse(is.na(analysis.group), "N-Find", analysis.group)
+    analysis.group = ifelse(is.na(analysis.group), "GI", analysis.group)
   )
 
 # 3: Number of works per data source by group -----------------------------
@@ -198,14 +200,15 @@ n.Works.byGroup.bySource <- data_workID %>%
   count() %>% 
   spread(analysis.group, n)
 
-n.Works.byGroup.bySource[6, ] <-
-  c(
-    "Total",
-    sum(n.Works.byGroup.bySource$`GV-ME`),
-    sum(n.Works.byGroup.bySource$`GV-SE`),
-    sum(n.Works.byGroup.bySource$Misc),
-    sum(n.Works.byGroup.bySource$`N-Find`)
+totals <- tibble(
+  Source = "Total",
+  GI = sum(n.Works.byGroup.bySource$GI),
+  `GV-ME`= sum(n.Works.byGroup.bySource$`GV-ME`),
+  `GV-SE` = sum(n.Works.byGroup.bySource$`GV-SE`),
+  Misc = sum(n.Works.byGroup.bySource$Misc)
   )
+
+n.Works.byGroup.bySource2 <- rbind(n.Works.byGroup.bySource, totals)
 
 # 4: Descriptive statistics for the number of ISBNs per work by group --------
 
@@ -223,10 +226,11 @@ n.ISBNs.byGroup <- data_workID %>%
     q99 = as.numeric(quantile(n.ISBNs.perWork, probs = seq(0.99, 0.99, by = 0.01)))
   )
 
-n.ISBNs.byGroup[6,] <- data_workID %>% 
+
+totals_2 <- data_workID %>% 
   filter(!is.na(n.ISBNs.perWork)) %>% #
   summarise(
-    Source = "Total",
+    analysis.group = "Total",
     mean = mean(n.ISBNs.perWork),
     median = median(n.ISBNs.perWork),
     sd = sd(n.ISBNs.perWork),
@@ -237,6 +241,7 @@ n.ISBNs.byGroup[6,] <- data_workID %>%
     q99 = as.numeric(quantile(n.ISBNs.perWork, probs = seq(0.99, 0.99, by = 0.01)))
   )
 
+n.ISBNs.byGroup <- rbind(n.ISBNs.byGroup, totals_2)
 
 # Create a dataset with only the oldest localID for each workID -----------------------------
 
@@ -282,10 +287,10 @@ Publishers_GV.ME <- Publisher.byGroup %>%
   select(Publisher_cleaned, `GV-ME`) %>% 
   filter(!is.na(`GV-ME`))
 
-Publishers_N.F <- Publisher.byGroup %>% 
-  arrange(desc(`N-Find`)) %>% 
+Publishers_GI <- Publisher.byGroup %>% 
+  arrange(desc(`GI`)) %>% 
   head(10) %>% 
-  select(Publisher_cleaned, `N-Find`)
+  select(Publisher_cleaned, `GI`)
 
 # Explore records with the most ISBNs ------------------------------------
 
@@ -317,3 +322,58 @@ test <- most.ISBNs.bySource %>% select(workID, localID, Source.x, n.ISBNs.GR, n.
 #Note: These were created manually:
 # Group 2 works with the largest number of ISBNs, three works per data source
 # Sample list of related ISBNs for the work with the largest number of ISBNs (American Civilization: an Introduction. By David Mauk and John Oakland)
+
+
+# Plots -------------------------------------------------------------------
+
+theme_academic_ls <- function() {
+  theme_classic() +
+    theme(
+      legend.position = "none",
+      text = element_text(family = "Times New Roman"),
+      axis.line.y = element_blank(),
+      axis.line.x = element_line(color = "grey70"),
+      axis.text = element_text(size = 10),
+      axis.title.y = element_blank(),
+      axis.title.x = element_text(size = 12, color = "grey30"),
+      axis.ticks = element_blank(),
+      panel.grid.major.y = element_line(),
+      plot.margin = margin(10, 10, 10, 10, "mm")
+    )
+}
+
+# ISBNS per work by Source
+
+data_localID$Source <- as.factor(data_localID$Source)
+data_localID$Source <- factor(data_localID$Source, levels = c("COBISS", "CRISTIN", "CROSBI", "VABB_PR", "VABB_NPR"))
+
+plot.source <- ggplot(data_localID, aes(x = Source, y = n.ISBNs.perWork)) +
+  geom_boxplot(alpha = 0.3) +
+  scale_y_continuous(name = "Number of ISBNs per work", 
+                     breaks = c(1, 5, 10, 15, 20, 40, 60), limits = c(1, 70)) +
+  scale_x_discrete(name = "\n(a) Data source",
+                   labels = c("COBISS" = "COBISS", "CRISTIN = CRISTIN", "CROSBI" = "CROSBI", "VABB_NPR" = "VABB not pr", "VABB_PR" = "VABB pr")) +
+  theme_academic_ls()
+
+# ISBNs per work by Group
+
+data_localID$analysis.group <- as.factor(data_localID$analysis.group)
+data_localID$analysis.group <- factor(data_localID$analysis.group, levels = c("GV-SE", "GV-ME", "Misc", "GI"))
+
+plot.group <- ggplot(data_localID, aes(x = analysis.group, y = n.ISBNs.perWork)) +
+  geom_boxplot(alpha = 0.3) +
+  scale_y_continuous(name = "Number of ISBNs per work",
+                     breaks = c(1, 5, 10, 15, 20, 40, 60),
+                     limits = c(1, 70),
+                     position = "right") +
+  scale_x_discrete(name = "(b) Group", labels = c("GV-SE" = "GV-SE\n", "GV-ME", "Misc", "GI")) +
+  theme_academic_ls() +
+  theme(
+    #axis.line.y.right = element_line(color = "grey70")
+  )
+
+# Combine plots
+
+plot.combined <- grid.arrange(plot.source, plot.group, nrow = 1, ncol = 2)
+
+ggsave("./NISBNs_300_edB.tiff", plot = plot.combined, width = 25, height = 15, units = "cm", dpi = 300)
